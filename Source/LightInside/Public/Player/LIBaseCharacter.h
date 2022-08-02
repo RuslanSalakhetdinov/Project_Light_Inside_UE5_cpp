@@ -24,6 +24,21 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	UCameraComponent* CameraComponent;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float DashLength = 2000.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float DashStartDelay = 0.1f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float DashDuration = 0.3f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float DashCoolDownTime = 2.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Components")
+	APlayerController* PlayerController;
+
 	virtual void BeginPlay() override;
 
 public:
@@ -34,8 +49,26 @@ public:
 private:
 	const float RotationRate = 5.0f;
 	const float DeadZone = 0.1f;
+	FVector CurrentDirection = FVector::Zero();
+	bool IsDashCD = false;
+	float DashTimerLeft = 0.0f;
+
+	FTimerHandle TH_DashOpener;
+	FTimerHandle TH_DashCloser;
+	FTimerHandle TH_DashCDTimer;
+	FTimerHandle TH_DashCD;
+
+	FVector GetXYAxisVector(FName AxisX, FName AxisY);
+	FVector MoveDirectionVector(FName AxisX, FName AxisY);
 
 	void MoveForward(float Amount);
 	void MoveRight(float Amount);
 	void RotationControl(float& DeltaTime);
+
+	void DashInputPressed();
+	void DashInputStart();
+	void DashInputFinish();
+	void Dash();
+	void DashTimer();
+	void DashNoCD();
 };

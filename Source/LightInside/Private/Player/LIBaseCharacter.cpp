@@ -6,6 +6,9 @@
 #include <Components/InputComponent.h>
 #include "Player/LIPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Misc/App.h"
+#include <TimerManager.h>
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All)
 
@@ -23,12 +26,14 @@ ALIBaseCharacter::ALIBaseCharacter()
 
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>("SrpingArmComponent");
 	SpringArmComponent->SetupAttachment(GetRootComponent());
-	SpringArmComponent->TargetArmLength = 1000.0f;
+	SpringArmComponent->TargetArmLength = 1400.0f;
 	SpringArmComponent->bDoCollisionTest = false;
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
 	CameraComponent->SetupAttachment(SpringArmComponent);
 	CameraComponent->bUsePawnControlRotation = false;
+
+	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 }
 
 void ALIBaseCharacter::BeginPlay()
@@ -46,11 +51,27 @@ void ALIBaseCharacter::Tick(float DeltaTime)
 void ALIBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	check(PlayerInputComponent);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ALIBaseCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ALIBaseCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("LookUp");
 	PlayerInputComponent->BindAxis("LookRight");
+	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &ALIBaseCharacter::DashInputPressed);
+}
+
+FVector ALIBaseCharacter::GetXYAxisVector(FName AxisX, FName AxisY)
+{
+	const float ForwardAmount = GetInputAxisValue(AxisX);
+	const float RightAmount = GetInputAxisValue(AxisY);
+
+	return FVector(ForwardAmount, RightAmount, 0.0f);
+}
+
+FVector ALIBaseCharacter::MoveDirectionVector(FName AxisX, FName AxisY)
+{
+	const FVector MoveDirection = GetXYAxisVector(AxisX, AxisY).GetSafeNormal();
+	return (CurrentDirection = MoveDirection);
 }
 
 void ALIBaseCharacter::MoveForward(float Amount)
@@ -69,11 +90,53 @@ void ALIBaseCharacter::MoveRight(float Amount)
 
 void ALIBaseCharacter::RotationControl(float& DeltaTime)
 {
-	const float ForwardAmount = GetInputAxisValue("LookUp");
-	const float RightAmount = GetInputAxisValue("LookRight");
-	const FVector FireDirection = FVector(ForwardAmount, RightAmount, 0.0f);
+	const FVector FireDirection = GetXYAxisVector("LookUp", "LookRight");
 
 	if (FireDirection.Length() < DeadZone) return;
 
 	GetController()->SetControlRotation(FMath::Lerp(GetController()->GetControlRotation(), FireDirection.Rotation(), RotationRate * DeltaTime));
+}
+
+void ALIBaseCharacter::DashInputPressed()
+{
+	if (IsDashCD) return;
+
+	IsDashCD = true;
+	DashTimerLeft = DashCoolDownTime + DashStartDelay;
+
+	GetWorldTimerManager().SetTimer(TH_DashCDTimer, this, &ALIBaseCharacter::DashTimer, GetWorld()->GetDeltaSeconds(), true);
+	GetWorldTimerManager().SetTimer(TH_DashCD, this, &ALIBaseCharacter::DashNoCD, DashCoolDownTime, false);
+	DashInputStart();
+}
+
+void ALIBaseCharacter::DashInputStart()
+{
+	if (MoveDirectionVector("MoveForward", "MoveRight") == FVector::Zero()) return;
+
+	GetWorldTimerManager().SetTimer(TH_DashOpener, this, &ALIBaseCharacter::Dash, GetWorld()->GetDeltaSeconds(), true, DashStartDelay);
+	GetWorldTimerManager().SetTimer(TH_DashCloser, this, &ALIBaseCharacter::DashInputFinish, DashDuration, false);
+}
+
+void ALIBaseCharacter::DashInputFinish()
+{
+	GetWorldTimerManager().ClearTimer(TH_DashOpener);
+}
+
+void ALIBaseCharacter::Dash()
+{
+	LaunchCharacter(CurrentDirection * DashLength, true, true);
+}
+
+void ALIBaseCharacter::DashTimer()
+{
+
+	UE_LOG(LogBaseCharacter, Display, TEXT("Dash in CD !Timer: %.0f"), FMath::Abs(DashTimerLeft));
+	DashTimerLeft -= GetWorld()->GetDeltaSeconds();
+}
+
+void ALIBaseCharacter::DashNoCD()
+{
+	IsDashCD = false;
+	GetWorldTimerManager().ClearTimer(TH_DashCDTimer);
+	UE_LOG(LogBaseCharacter, Display, TEXT("You can use you Dash Ability"));
 }
