@@ -32,6 +32,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+	const float RotationRate = 5.0f;
+	const float DeadZone = 0.1f;
+
 	void MoveForward(float Amount);
 	void MoveRight(float Amount);
+	void RotationControl(float& DeltaTime);
 };
