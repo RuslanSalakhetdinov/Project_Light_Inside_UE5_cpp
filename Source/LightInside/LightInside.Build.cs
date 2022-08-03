@@ -13,7 +13,8 @@ public class LightInside : ModuleRules
         PrivateDependencyModuleNames.AddRange(new string[] { });
 
         PublicIncludePaths.AddRange(new string[] {
-        "LightInside/Public/Player"
+        "LightInside/Public/Player",
+        "LightInside/Public/Components"
         });
 
         // Uncomment if you are using Slate UI

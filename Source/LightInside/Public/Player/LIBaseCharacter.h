@@ -15,7 +15,7 @@ class LIGHTINSIDE_API ALIBaseCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	ALIBaseCharacter();
+	ALIBaseCharacter(const FObjectInitializer& ObjInit);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Components")
@@ -42,6 +42,12 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
+	bool IsSpeedBuffed = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement", meta = (ClampMin = "1.2", ClampMax = "10.0"))
+	float RunModifier = 2.0f;
+
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -72,4 +78,7 @@ private:
 	void Dash();
 	void DashTimer();
 	void DashNoCD();
+
+	void RunStart();
+	void RunFinish();
 };

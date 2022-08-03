@@ -5,14 +5,15 @@
 #include <GameFramework/SpringArmComponent.h>
 #include <Components/InputComponent.h>
 #include "Player/LIPlayerController.h"
-#include "GameFramework/CharacterMovementComponent.h"
+//#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
-//#include "Misc/App.h"
 #include <TimerManager.h>
+#include <Components/LICharacterMovementComponent.h>
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All)
 
-ALIBaseCharacter::ALIBaseCharacter()
+ALIBaseCharacter::ALIBaseCharacter(const FObjectInitializer& ObjInit)
+	: Super(ObjInit.SetDefaultSubobjectClass<ULICharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 
 	PrimaryActorTick.bCanEverTick = true;
@@ -58,6 +59,8 @@ void ALIBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAxis("LookUp");
 	PlayerInputComponent->BindAxis("LookRight");
 	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &ALIBaseCharacter::DashInputPressed);
+	PlayerInputComponent->BindAction("SpeedBuff", IE_Pressed, this, &ALIBaseCharacter::RunStart);
+	PlayerInputComponent->BindAction("SpeedBuff", IE_Released, this, &ALIBaseCharacter::RunFinish);
 }
 
 FVector ALIBaseCharacter::GetXYAxisVector(FName AxisX, FName AxisY)
@@ -143,4 +146,14 @@ void ALIBaseCharacter::DashNoCD()
 	IsDashCD = false;
 	GetWorldTimerManager().ClearTimer(TH_DashCDTimer);
 	UE_LOG(LogBaseCharacter, Display, TEXT("You can use you Dash Ability"));
+}
+
+void ALIBaseCharacter::RunStart()
+{
+	IsSpeedBuffed = true;
+}
+
+void ALIBaseCharacter::RunFinish()
+{
+	IsSpeedBuffed = false;
 }
