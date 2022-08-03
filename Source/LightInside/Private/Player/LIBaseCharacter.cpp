@@ -7,7 +7,7 @@
 #include "Player/LIPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "Misc/App.h"
+//#include "Misc/App.h"
 #include <TimerManager.h>
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All)
@@ -106,6 +106,7 @@ void ALIBaseCharacter::DashInputPressed()
 
 	GetWorldTimerManager().SetTimer(TH_DashCDTimer, this, &ALIBaseCharacter::DashTimer, GetWorld()->GetDeltaSeconds(), true);
 	GetWorldTimerManager().SetTimer(TH_DashCD, this, &ALIBaseCharacter::DashNoCD, DashCoolDownTime, false);
+	Temp = DashTimerLeft;
 	DashInputStart();
 }
 
@@ -129,8 +130,11 @@ void ALIBaseCharacter::Dash()
 
 void ALIBaseCharacter::DashTimer()
 {
-
-	UE_LOG(LogBaseCharacter, Display, TEXT("Dash in CD !Timer: %.0f"), FMath::Abs(DashTimerLeft));
+	if (Temp != FMath::RoundToFloat(DashTimerLeft))
+	{
+		UE_LOG(LogBaseCharacter, Display, TEXT("Dash in CD !Timer: %.0f"), FMath::Abs(DashTimerLeft));
+		Temp = FMath::RoundToFloat(DashTimerLeft);
+	}
 	DashTimerLeft -= GetWorld()->GetDeltaSeconds();
 }
 

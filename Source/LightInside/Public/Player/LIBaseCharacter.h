@@ -52,6 +52,7 @@ private:
 	FVector CurrentDirection = FVector::Zero();
 	bool IsDashCD = false;
 	float DashTimerLeft = 0.0f;
+	float Temp = 0.0f;
 
 	FTimerHandle TH_DashOpener;
 	FTimerHandle TH_DashCloser;
