@@ -3,12 +3,13 @@
 #include "Player/LIBaseCharacter.h"
 #include <Camera/CameraComponent.h>
 #include <GameFramework/SpringArmComponent.h>
-#include <Components/InputComponent.h>
-#include "Player/LIPlayerController.h"
-//#include "GameFramework/CharacterMovementComponent.h"
-#include "Kismet/GameplayStatics.h"
-#include <TimerManager.h>
 #include <Components/LICharacterMovementComponent.h>
+#include <Components/LIHealthComponent.h>
+#include <Components/InputComponent.h>
+#include <Components/TextRenderComponent.h>
+#include <Player/LIPlayerController.h>
+#include <Kismet/GameplayStatics.h>
+#include <TimerManager.h>
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All)
 
@@ -34,12 +35,26 @@ ALIBaseCharacter::ALIBaseCharacter(const FObjectInitializer& ObjInit)
 	CameraComponent->SetupAttachment(SpringArmComponent);
 	CameraComponent->bUsePawnControlRotation = false;
 
+	HealthComponent = CreateDefaultSubobject<ULIHealthComponent>("HealthComponent");
+
+	HealthTextComponent = CreateDefaultSubobject<UTextRenderComponent>("HealthTextComponent");
+	HealthTextComponent->SetupAttachment(SpringArmComponent);
+	HealthTextComponent->SetRelativeLocationAndRotation(FVector(500.0f, 200.0f, 0.0f), FRotator(0.0f, 180.0f, 0.0f));
+
+	DashTextComponent = CreateDefaultSubobject<UTextRenderComponent>("DashTextComponent");
+	DashTextComponent->SetupAttachment(SpringArmComponent);
+	DashTextComponent->SetRelativeLocationAndRotation(FVector(500.0f, 200.0f, -100.0f), FRotator(0.0f, 180.0f, 0.0f));
+	DashTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Dash Ability Ready!!!"))));
+
 	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 }
 
 void ALIBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	check(HealthComponent);
+	check(HealthTextComponent);
+	check(DashTextComponent);
 }
 
 void ALIBaseCharacter::Tick(float DeltaTime)
@@ -47,6 +62,8 @@ void ALIBaseCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	RotationControl(DeltaTime);
+	const auto Health = HealthComponent->GetHealth();
+	HealthTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Current Health: %.0f"), Health)));
 }
 
 void ALIBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -135,7 +152,7 @@ void ALIBaseCharacter::DashTimer()
 {
 	if (Temp != FMath::RoundToFloat(DashTimerLeft))
 	{
-		UE_LOG(LogBaseCharacter, Display, TEXT("Dash in CD !Timer: %.0f"), FMath::Abs(DashTimerLeft));
+		DashTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Dash CD %.0f"), FMath::Abs(DashTimerLeft))));
 		Temp = FMath::RoundToFloat(DashTimerLeft);
 	}
 	DashTimerLeft -= GetWorld()->GetDeltaSeconds();
@@ -145,7 +162,7 @@ void ALIBaseCharacter::DashNoCD()
 {
 	IsDashCD = false;
 	GetWorldTimerManager().ClearTimer(TH_DashCDTimer);
-	UE_LOG(LogBaseCharacter, Display, TEXT("You can use you Dash Ability"));
+	DashTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Dash Ability Ready!!!"))));
 }
 
 void ALIBaseCharacter::RunStart()
