@@ -36,13 +36,13 @@ protected:
 	UTextRenderComponent* DashTextComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float DashLength = 2000.0f;
+	float DashForce = 2000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float DashStartDelay = 0.1f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float DashDuration = 0.3f;
+	float DashDuration = 0.4f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float DashCoolDownTime = 2.0f;
@@ -50,23 +50,37 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+	virtual void Tick(float DeltaTime) override;
+
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
+	float AmplitudeSinMovement = 10.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
+	float FrequencySinMovement = 2.0f;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
 	bool IsSpeedBuffed = false;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement", meta = (ClampMin = "1.2", ClampMax = "10.0"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
+	bool IsDashing = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement",
+		meta = (ClampMin = "1.2", ClampMax = "10.0"))
 	float RunModifier = 2.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Components")
 	APlayerController* PlayerController;
 
-	virtual void Tick(float DeltaTime) override;
-
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	float GetMovementDirection() const;
 
 private:
 	const float RotationRate = 5.0f;
 	const float DeadZone = 0.1f;
 	FVector CurrentDirection = FVector::Zero();
+	FVector InitialLocation = FVector::Zero();
 	bool IsDashCD = false;
 	float DashTimerLeft = 0.0f;
 	float Temp = 0.0f;
@@ -75,6 +89,8 @@ private:
 	FTimerHandle TH_DashCloser;
 	FTimerHandle TH_DashCDTimer;
 	FTimerHandle TH_DashCD;
+
+	void MeshSinMovement();
 
 	FVector GetXYAxisVector(FName AxisX, FName AxisY);
 	FVector MoveDirectionVector(FName AxisX, FName AxisY);

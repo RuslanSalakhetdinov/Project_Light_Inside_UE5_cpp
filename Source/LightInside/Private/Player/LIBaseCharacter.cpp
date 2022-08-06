@@ -4,6 +4,7 @@
 #include <Camera/CameraComponent.h>
 #include <GameFramework/SpringArmComponent.h>
 #include <Components/LICharacterMovementComponent.h>
+#include <Components/SkeletalMeshComponent.h>
 #include <Components/LIHealthComponent.h>
 #include <Components/InputComponent.h>
 #include <Components/TextRenderComponent.h>
@@ -55,12 +56,15 @@ void ALIBaseCharacter::BeginPlay()
 	check(HealthComponent);
 	check(HealthTextComponent);
 	check(DashTextComponent);
+
+	InitialLocation = GetMesh()->GetRelativeLocation();
 }
 
 void ALIBaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	MeshSinMovement();
 	RotationControl(DeltaTime);
 	const auto Health = HealthComponent->GetHealth();
 	HealthTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Current Health: %.0f"), Health)));
@@ -78,6 +82,28 @@ void ALIBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &ALIBaseCharacter::DashInputPressed);
 	PlayerInputComponent->BindAction("SpeedBuff", IE_Pressed, this, &ALIBaseCharacter::RunStart);
 	PlayerInputComponent->BindAction("SpeedBuff", IE_Released, this, &ALIBaseCharacter::RunFinish);
+}
+
+float ALIBaseCharacter::GetMovementDirection() const
+{
+	if (GetVelocity().IsZero()) return 0.0f;
+	const auto VelocityNormal = GetVelocity().GetSafeNormal();
+	const auto AngleBetween = FMath::Acos(FVector::DotProduct(GetActorForwardVector(), VelocityNormal));
+	const auto CrossProduct = FVector::CrossProduct(GetActorForwardVector(), VelocityNormal);
+	const auto Degrees = FMath::RadiansToDegrees(AngleBetween);
+	return CrossProduct.IsZero() ? Degrees : Degrees * FMath::Sign(CrossProduct.Z);
+}
+
+void ALIBaseCharacter::MeshSinMovement()
+{
+	FVector CurrentLocation = GetMesh()->GetRelativeLocation();
+	if (GetWorld())
+	{
+		float Time = GetWorld()->GetTimeSeconds();
+		CurrentLocation.Z = InitialLocation.Z + AmplitudeSinMovement * FMath::Sin(FrequencySinMovement * Time);
+
+		GetMesh()->SetRelativeLocation(CurrentLocation);
+	}
 }
 
 FVector ALIBaseCharacter::GetXYAxisVector(FName AxisX, FName AxisY)
@@ -119,8 +145,9 @@ void ALIBaseCharacter::RotationControl(float& DeltaTime)
 
 void ALIBaseCharacter::DashInputPressed()
 {
-	if (IsDashCD) return;
+	if (IsDashCD || MoveDirectionVector("MoveForward", "MoveRight") == FVector::Zero()) return;
 
+	IsDashing = true;
 	IsDashCD = true;
 	DashTimerLeft = DashCoolDownTime + DashStartDelay;
 
@@ -145,7 +172,7 @@ void ALIBaseCharacter::DashInputFinish()
 
 void ALIBaseCharacter::Dash()
 {
-	LaunchCharacter(CurrentDirection * DashLength, true, true);
+	LaunchCharacter(CurrentDirection * DashForce, true, true);
 }
 
 void ALIBaseCharacter::DashTimer()
@@ -160,6 +187,7 @@ void ALIBaseCharacter::DashTimer()
 
 void ALIBaseCharacter::DashNoCD()
 {
+	IsDashing = false;
 	IsDashCD = false;
 	GetWorldTimerManager().ClearTimer(TH_DashCDTimer);
 	DashTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Dash Ability Ready!!!"))));
