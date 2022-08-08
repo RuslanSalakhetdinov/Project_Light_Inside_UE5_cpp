@@ -44,8 +44,13 @@ ALIBaseCharacter::ALIBaseCharacter(const FObjectInitializer& ObjInit)
 
 	DashTextComponent = CreateDefaultSubobject<UTextRenderComponent>("DashTextComponent");
 	DashTextComponent->SetupAttachment(SpringArmComponent);
-	DashTextComponent->SetRelativeLocationAndRotation(FVector(500.0f, 200.0f, -100.0f), FRotator(0.0f, 180.0f, 0.0f));
-	DashTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Dash Ability Ready!!!"))));
+	DashTextComponent->SetRelativeLocationAndRotation(FVector(500.0f, 200.0f, -50.0f), FRotator(0.0f, 180.0f, 0.0f));
+	DashTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Dash Ability Ready"))));
+
+	ShootTextComponent = CreateDefaultSubobject<UTextRenderComponent>("ShootTextComponent");
+	ShootTextComponent->SetupAttachment(SpringArmComponent);
+	ShootTextComponent->SetRelativeLocationAndRotation(FVector(500.0f, 200.0f, -100.0f), FRotator(0.0f, 180.0f, 0.0f));
+	ShootTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Guns on the table"))));
 
 	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 }
@@ -64,6 +69,7 @@ void ALIBaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	LerpAlpha();
 	MeshSinMovement();
 	RotationControl(DeltaTime);
 	const auto Health = HealthComponent->GetHealth();
@@ -82,6 +88,8 @@ void ALIBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &ALIBaseCharacter::DashInputPressed);
 	PlayerInputComponent->BindAction("SpeedBuff", IE_Pressed, this, &ALIBaseCharacter::RunStart);
 	PlayerInputComponent->BindAction("SpeedBuff", IE_Released, this, &ALIBaseCharacter::RunFinish);
+	PlayerInputComponent->BindAction("Shoot", IE_Pressed, this, &ALIBaseCharacter::ShootStart);
+	PlayerInputComponent->BindAction("Shoot", IE_Released, this, &ALIBaseCharacter::ShootFinish);
 }
 
 float ALIBaseCharacter::GetMovementDirection() const
@@ -120,6 +128,12 @@ FVector ALIBaseCharacter::MoveDirectionVector(FName AxisX, FName AxisY)
 	return (CurrentDirection = MoveDirection);
 }
 
+void ALIBaseCharacter::LerpAlpha()
+{
+	if (FMath::IsNearlyEqual(Alpha, AlphaTemp)) return;
+	Alpha = FMath::Lerp(Alpha, AlphaTemp, 0.1);
+}
+
 void ALIBaseCharacter::MoveForward(float Amount)
 {
 	if (FMath::IsNearlyZero(Amount)) return;
@@ -153,7 +167,7 @@ void ALIBaseCharacter::DashInputPressed()
 
 	GetWorldTimerManager().SetTimer(TH_DashCDTimer, this, &ALIBaseCharacter::DashTimer, GetWorld()->GetDeltaSeconds(), true);
 	GetWorldTimerManager().SetTimer(TH_DashCD, this, &ALIBaseCharacter::DashNoCD, DashCoolDownTime, false);
-	Temp = DashTimerLeft;
+	DashTimerTemp = DashTimerLeft;
 	DashInputStart();
 }
 
@@ -177,10 +191,10 @@ void ALIBaseCharacter::Dash()
 
 void ALIBaseCharacter::DashTimer()
 {
-	if (Temp != FMath::RoundToFloat(DashTimerLeft))
+	if (DashTimerTemp != FMath::RoundToFloat(DashTimerLeft))
 	{
 		DashTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Dash CD %.0f"), FMath::Abs(DashTimerLeft))));
-		Temp = FMath::RoundToFloat(DashTimerLeft);
+		DashTimerTemp = FMath::RoundToFloat(DashTimerLeft);
 	}
 	DashTimerLeft -= GetWorld()->GetDeltaSeconds();
 }
@@ -190,7 +204,7 @@ void ALIBaseCharacter::DashNoCD()
 	IsDashing = false;
 	IsDashCD = false;
 	GetWorldTimerManager().ClearTimer(TH_DashCDTimer);
-	DashTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Dash Ability Ready!!!"))));
+	DashTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Dash Ability Ready"))));
 }
 
 void ALIBaseCharacter::RunStart()
@@ -201,4 +215,18 @@ void ALIBaseCharacter::RunStart()
 void ALIBaseCharacter::RunFinish()
 {
 	IsSpeedBuffed = false;
+}
+
+void ALIBaseCharacter::ShootStart()
+{
+	ShootTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Kill them all!!!"))));
+	IsShooting = true;
+	AlphaTemp = 1.0f;
+}
+
+void ALIBaseCharacter::ShootFinish()
+{
+	ShootTextComponent->SetText(FText::FromString(FString::Printf(TEXT("Guns on the table"))));
+	IsShooting = false;
+	AlphaTemp = 0.0f;
 }

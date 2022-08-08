@@ -35,6 +35,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Components")
 	UTextRenderComponent* DashTextComponent;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Components")
+	UTextRenderComponent* ShootTextComponent;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float DashForce = 2000.0f;
 
@@ -66,6 +69,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
 	bool IsDashing = false;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+	bool IsShooting = false;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement",
 		meta = (ClampMin = "1.2", ClampMax = "10.0"))
 	float RunModifier = 2.0f;
@@ -76,6 +82,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	float GetMovementDirection() const;
 
+	UPROPERTY(BlueprintReadWrite)
+	float Alpha = 0.0f;
+
 private:
 	const float RotationRate = 5.0f;
 	const float DeadZone = 0.1f;
@@ -83,7 +92,8 @@ private:
 	FVector InitialLocation = FVector::Zero();
 	bool IsDashCD = false;
 	float DashTimerLeft = 0.0f;
-	float Temp = 0.0f;
+	float DashTimerTemp = 0.0f;
+	float AlphaTemp = 0.0f;
 
 	FTimerHandle TH_DashOpener;
 	FTimerHandle TH_DashCloser;
@@ -94,6 +104,7 @@ private:
 
 	FVector GetXYAxisVector(FName AxisX, FName AxisY);
 	FVector MoveDirectionVector(FName AxisX, FName AxisY);
+	void LerpAlpha();
 
 	void MoveForward(float Amount);
 	void MoveRight(float Amount);
@@ -108,4 +119,7 @@ private:
 
 	void RunStart();
 	void RunFinish();
+
+	void ShootStart();
+	void ShootFinish();
 };
