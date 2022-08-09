@@ -16,3 +16,5 @@ At last but not least, make sure you have .NET Framework 4.6.2.
 ![VS Installer part 2](https://github.com/RuslanSalakhetdinov/Project_Light_Inside_UE5_cpp/blob/master/Content/Images/2022-08-09_12-45-31.png)
 
 ![VS Installer part 3](https://github.com/RuslanSalakhetdinov/Project_Light_Inside_UE5_cpp/blob/master/Content/Images/2022-08-09_12-52-11.png)
+
+After all this steps execute file ***LightInside.uproject***
