@@ -19,6 +19,6 @@ At last but not least, make sure you have .NET Framework 4.6.2.
 
 After all this steps execute file ***LightInside.uproject***
 
-***P.S.*** Try press right click on ***LightInside.uproject*** and choose **Generate project files**, if you have any troubles.
+***P.S.*** Try to press right click on ***LightInside.uproject*** and choose **Generate project files**, if you have any troubles.
 
 ![Options](https://github.com/RuslanSalakhetdinov/Project_Light_Inside_UE5_cpp/blob/master/Content/Images/2022-08-09_14-31-04.png)
